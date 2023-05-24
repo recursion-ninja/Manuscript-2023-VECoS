@@ -199,17 +199,20 @@ The latter ensures that no matter how many compromises of key material occur amo
 
 \section{Formalization Abstractions\label{sec:Formal-Abstractions}}
 
-Because 
+Formalizing the model under verification is always an important and detailed process.
+However, as our verification methodology utilizes explicit state model checking, it is important to rigorously control the size of the model's state-space.  
+To that end, multiple abstractions presented within Section \ref{sec:Formal-Abstractions} which, when composed together progressively contain and reduce the model's state-space.
+Without these abstractions, the model would not be verifiable for even modestly sized parameters.
 
 \subsection{Continuous Group Key Agreement}
 
-In the two-party case, a general notion of Continuous Key Agreement~\cite{alwen2019double} has been used to provide robust security guarantees such as forward secrecy and post-compromise security.
-For \Abrev{SGM}, this same notion has been extended to \Abrev{CGKA}~\cite{alwen2020security} which is used as an abstraction for reasoning about the \Abrev{MLS} security guarantees.
+In the two-party case, a general notion of Continuous Key Agreement has been used to provide robust security guarantees such as forward secrecy and post-compromise security~\cite{alwen2019double}.
+For \Abrev{SGM}, this same notion has been extended to \Abrev{CGKA} which is used as an abstraction for reasoning about the \Abrev{MLS} security guarantees~\cite{alwen2020security}.
 The  \CGKAdef\ is used to maintain secure communications between a group of two or more participants.
 A continuous group key-agreement scheme is an abstract collection of algorithms used to maintain secure communications between a group of two or more participants, each algorithm being known and performed locally by participants:\\[2mm]
 \centerline{$\CGKAdef = \left\{\,\Protocol{init},\, \Protocol{create},\, \Protocol{add},\, \Protocol{rem},\, \Protocol{upd},\, \Protocol{proc}\,\right\}$}\\[-3mm]
 
-Additionally, an oracle-based security game for \Abrev{CGKA} is also defined.~\cite{alwen2020security}
+Additionally, an oracle-based security game for \Abrev{CGKA} is also defined~\cite{alwen2020security}.
 Each oracle is defined in terms of one or more of the algorithms from the \CGKAdef\ definition.
 An adversary can query all ten of the game's oracles, and through the sequence of query's, the adversary uses the oracles to direct the execution of the \Abrev{CGKA} protocol.
 The group members can only call the six \CGKAdef\ algorithms above, while the adversary can only query the ten oracles below.
@@ -375,9 +378,7 @@ Although the \Adversary can query both oracles multiple times during an epoch, d
 Eventually, since $N$ is finite, there will no longer be an option to make a "non-redundant" query to \Oracle{corr}{} or \Oracle{no-del}{} because the state of all group members will be $\bot$. Similarly, querying \Oracle{reveal}{} can only occur at most once per epoch, resulting in a fresh state and decreasing the available moves for the \Adversary by one, as the "non-redundant" constraint prevents querying \Oracle{reveal}{} again in the current epoch.
 
 Analyzing the relationship of the oracles in the \CGKAsec state, we observe that imposing the "non-redundant" constraint causes the available moves for the \Adversary in the current epoch to monotonically decrease with each query. Eventually, this leads to a point where no "non-redundant" moves are available that would result in the same epoch, requiring \Adversary to advance the game to the next epoch.
-Consequently, utilizing this can be considered a ``Required Progression''  abstraction.
-
-The ``Required Progression''  abstraction fully bounds the model's state-space by the parameters $T$ and $N$.
+Consequently, utilizing this can be considered a ``Required Progression''  abstraction which fully bounds the model's state-space by the parameters $T$ and $N$.
 This is apparent by observing that the number of queries \Adversary can make in each epoch is constrained by $N$ and the total number of epochs is constrained by $T$.
 The application of compositing this abstraction all prior abstractions is depicted in Figure \ref{fig:CGKA-Progressing}
 
@@ -423,36 +424,28 @@ The culmination of composing all abstractions described within Section \ref{sec:
 
 \section{Methodology}
 
-\subsection{\Promela}
+\subsection{\Promela and Spin}
 
-Let \CGKAmodPN{V}{N} denote the TreeKEM model encoding with parameter $N$, for the model derived by composing the abstractions described in Section \ref{sec:Formal-Abstractions}.
-The encoding implementation of \CGKAmodPN{V}{N} utilized the Protocol Meta Language (\Promela)~\cite{HolzmannSpinBook2003, holzmann1990design}
+Let \CGKAmodN{N} denote the TreeKEM model encoding with parameter $N$, for the model derived by composing the abstractions described in Section \ref{sec:Formal-Abstractions}.
+The encoding implementation of \CGKAmodN{N} utilized the Protocol Meta Language (\Promela)~\cite{HolzmannSpinBook2003}.
 The key language feature of \Promela is that \emph{all} branching -- conditional execution, looping, and randomness -- are evaluated non-deterministically, making it a natural choice for encoding the model.
 The \Promela encoding\footnote{Source code: \url{\texttt{https://github.com/recursion-ninja/Manuscript-2023-VECoS}}}\ %
-of \CGKAmodPN{V}{N} produces all possible states and transitions of TreeKEM, and this representation is then supplied to a model checker for verification.
-
-\subsection{Spin}
+of \CGKAmodN{N} produces all possible states and transitions of TreeKEM, and this representation is then supplied to a model checker for verification.
 
 The explicit state model checker the Spin model checker~\cite{HolzmannSpinBook2003} was chosen as the verification tool for this work.
 As an explicit-state model checker, Spin utilizes a representation of all possible model states as an \Abrev{FSM}~\cite{clarke1981design}, with transitions uniquely identifying the possible changes in model state.
 Spin then asserts that a properties holds for the protocol by traversing through all combinations of transitions through the graph~\cite{Vardi1986}.
 The principle drawback of explicit state model checking is the immense state-space resulting as the model complexity grows~\cite{burch1992symbolic}.
-As a venerable tool, Spin does much to address this~\cite{rudin1987limits, godefroid1990using, valmari1993fly, peled1994combining, couvreur1999fly} but our own encoding adaptations which further mitigate the state-space explosion are detailed below in Sections \ref{sec:bit-array} and \ref{sec:popcount}.
+As a venerable tool, Spin does much to address this~\cite{rudin1987limits} but our own encoding adaptations which further mitigate the state-space explosion are detailed below in Sections \ref{sec:bit-array} and \ref{sec:popcount}.
 Additionally, Spin supports numerous compile time directive which alter the state-space representation, search trajectories, and time-memory trade-offs (see Table \ref{tab:spin-confg}).
 
 
 \subsection{Encoding  of Bit-arrays\label{sec:bit-array}}
 
-By default the \Promela type system supports an array of bits.
-Unfortunately, at runtime this is encoded as an array of bytes, with each ``\Promela bit value'' requiring 8 bits during verification runtime.
-The impact is two fold.
-First, the bit inflates the size of the state-vector by 8 bits, requiring additional, superfluous memory.
-Secondly, despite the 8 bits within the state-vector having only 2 valid state encodings, the model checker is unaware of this and entertains the possibility of 256 states.
-The result is a larger state-vector yielding slower verification times while also requiring more memory.
-
-Our work remedies this encoding issue by manually toggling bits within a fixed bit-width \Promela type.
-The bit toggling is facilitated by C Pre-processor (CPP) macros which insert the appropriate bit-wise operations at the call site.
-Inclusion of this manual state-vector reduction fully mitigated the issue, improving runtime and reducing memory usage.
+In the default \Promela type system, an array of bits is encoded as an array of bytes at runtime, resulting in each "bit value" requiring 8 bits during verification.
+This encoding inflates the state-vector size unnecessarily by 8 bits and causes the model checker to consider 256 states instead of the actual 2 valid state encodings.
+Consequently, verification times are slower, and at least eight times more memory is required.
+To address this, we manually toggle bits within a fixed bit-width \Promela type using C Pre-processor (CPP) macros, reducing the state-vector size and improving runtime efficiency while minimizing memory usage.
 
 
 \subsection{Control Flow Elision via PopCount\label{sec:popcount}}
@@ -469,6 +462,10 @@ Substituting PopCount in place of the naive iteration has two notable effects, r
 For a bit-array of length $n$, the number of transitions encoded in the model by iteration is exponentially related to $n$, whereas the PopCount macro derives a \emph{constant} number of transitions independent of $n$.
 
 \subsection{LTL Properties}
+
+The security guarantees under verification are encoded in \Abrev{LTL}.
+\Abrev{LTL} expressions are natively supported by \Promela and Spin.
+Below are the English definitions of \Abrev{FSU} and \Abrev{FSU} along with their corresponding \Abrev{LTL} formulae.
 
 \begin{definition}[Forward Secrecy with Updates]
 If the state of any group member is leaked at some point, all previous shared keys remain hidden from the adversary.
@@ -490,7 +487,8 @@ After every group member whose state was leaked initiates an epoch update, and t
 \section{Results}
 
 %Recall that our abstractions allowed for only one parameter.
-Verification of  \Abrev{FSU} and \Abrev{PCS} was conducted on the models \CGKAmodPN{\VersionOne}{16} and \CGKAmodPN{\VersionTwo}{16}.
+
+Verification of  \Abrev{FSU} and \Abrev{PCS} was conducted on the models \CGKAmodN{16}.
 Each models had a state-vector of $100$\siBytes.
 Verification runs utilized 1 TiB RAM and \(64\) AMD Opteron Processor 6380 core operating at 2500MHz\footnote{Performed on the American Museum of Natural History scientific computing cluster}.
 Each verification run utilized 2 cores and up to 200 GiB of RAM.
@@ -501,7 +499,7 @@ All \Abrev{LTL} properties for all models were successfully verified.
 
 \subsection{Interpretation}
 
-The positive verification of the LTL encodings of  \Abrev{FSU} and \Abrev{PCS} for  \CGKAmodPN{\VersionOne}{16} and \CGKAmodPN{\VersionTwo}{16} are not surprising.
+The positive verification of the LTL encodings of  \Abrev{FSU} and \Abrev{PCS} for \CGKAmodN{16} are not surprising.
 Rather, it is consistent with the exceptions shown by the previous \CGKAdef abstraction formalization work~\cite{alwen2020security}.
 % Mention we do this, has not been done before.
 While consistent, this is the first instance known to the authors which has modeled the TreeKEM protocol and verified \Abrev{FSU} and \Abrev{PCS} for all $(\,T, C, N\,)$--Adversaries, with $T \in \NumericRangeOpenR{1}{\infty}$, $C \in \NumericRange{1}{T}$, and $N \in \NumericRange{2}{16}$.
@@ -510,18 +508,29 @@ While consistent, this is the first instance known to the authors which has mode
 
 The combination of presented composed abstractions and encoding techniques constitute an additional and general contribution which may be applicable to other modeling endeavors.
 Empirical results of employing these abstractions in conjunction with the bit-packing and PopCount encodings impressively reduced the model complexity, model parameters, state-vector size, verification time, as well as the memory footprint!
-For comparison Table \ref{tab:state-vector-comparison} compares state-vector length of this work's model encoding with prior verification work~\cite{washburn2022formal}, emphasizing the vast difference in model expressiveness and encoding efficiency.
+For comparison Table \ref{tab:state-vector-comparison} compares state-vector length of this work's model encoding with our prior verification work~\cite{washburn2022formal}, emphasizing the vast difference in model expressiveness and encoding efficiency.
 Consequently, the verification performance also differs drastically from prior work.
-As depicted in Table \ref{tab:performance-comparison}, a modest time/memory tradeoff permits our model encoding to complete verification much faster than prior verification work~\cite{washburn2022formal}.
+As depicted in Table \ref{tab:performance-comparison}, a modest time/memory tradeoff permits our model encoding to complete verification much faster than our prior verification work~\cite{washburn2022formal}.
 Security guarantee verification not only concludes more quickly, but remarkably the conclusion also literally produces an infinitely stronger result; $\forall T \in \NumericRangeOpenR{1}{\infty}$.
-    
+
+\subsection{Future Work}
+
+The authors hypothesize that the model can scale to $N = 24$ on computing cluster hardware without further modification.
+Perhaps even $N \approx 32$ can be achieve with minor modifications.
+Such verification efforts are an immediate next step.
+Similarly, additional properties of TreeKEM can be explored with this work's model encoding.
+One such direction would involve exploring the relaxation of requirements placed on the \Abrev{DS}, enabling TreeKEM's operation with less trust placed in a third party.
+ 
 \section{Conclusion}
 
-This work presents effective, and generally applicable model abstraction and model encoding techniques.
+This work presents a verification of \Abrev{FSU} and \Abrev{PCS} for TreeKEM; an important undertaking in establishing the security of and confidence in the the protocol.
+Furthermore, an example of effective, and generally applicable model abstraction and model encoding techniques are illustrated.
+The authors believe we are the first to compose these abstractions and encoding techniques in the combination presented.
 The exploration of combining these techniques has been shown to be vitally important tools for achieving scalability when verifying a complex model such as the TreeKEM protocol.
 An unqualified improvement was obtained across each of the following measurable dimensions: model complexity,  parameterization, state-vector length, and verification space as well as time.
 While the application and analysis of presented techniques herein was limited to TreeKEM, the techniques are not so bespoke that they apply only to modeling and verifying TreeKEM.
 Rather, it is probably that only minor creativity is require to transfer them to other modeling efforts.
+
 
 \begin{table}[t!]%
 \begin{center}%
@@ -552,7 +561,6 @@ Rather, it is probably that only minor creativity is require to transfer them to
 \begin{tabular}[t]{ l c c c c c r r r r}%
 \toprule%
 {\TableHeadFontSize Model} &
-{\TableHeadFontSize $V$} &
 {\TableHeadFontSize $N$} &
 {\TableHeadFontSize $T$} &
 {\TableHeadFontSize LTL} &
@@ -561,13 +569,13 @@ Rather, it is probably that only minor creativity is require to transfer them to
 {\TableHeadFontSize States} &
 {\TableHeadFontSize Transitions}\\
 \midrule%
-\multirow{2}{*}{~Ours} &
-\VersionOne & 7 & $\infty$ & \LTLPredicate{FSU} &~6,230s &   52.008 \siGiBytes\ & 1,142,793,000 & 2,082,413,800 \\
-& \VersionOne & 7 & $\infty$ & \LTLPredicate{PCS} & 17,800s &   110.001 \siGiBytes\ & 2,060,603,300 & 3,462,063,000 \\
+\multirow{2}{*}{~New} &
+7 & $\infty$ & \LTLPredicate{FSU} &~6,230s &   52.008 \siGiBytes\ & 1,142,793,000 & 2,082,413,800 \\
+& 7 & $\infty$ & \LTLPredicate{PCS} & 17,800s &   110.001 \siGiBytes\ & 2,060,603,300 & 3,462,063,000 \\
 \midrule%
 \multirow{2}{*}{~Prior}&
-\VersionOne & 7 & 7& \LTLPredicate{FSU} & 35,659s &   1.325 \siGiBytes\ & 21,597,288 & 31,636,624 \\
-& \VersionOne  & 7 & 7& \LTLPredicate{PCS} & 66,258s &  21.218 \siGiBytes\ &   301,981,490 &  305,034,100 \\
+7 & 7& \LTLPredicate{FSU} & 35,659s &   1.325 \siGiBytes\ & 21,597,288 & 31,636,624 \\
+& 7 & 7& \LTLPredicate{PCS} & 66,258s &  21.218 \siGiBytes\ &   301,981,490 &  305,034,100 \\
 \bottomrule%
 \end{tabular}%
 }% END font resize
@@ -583,7 +591,7 @@ Rather, it is probably that only minor creativity is require to transfer them to
 \begin{subtable}[t]{\TableWidthStateVector}%
 \begin{tabular}[t]{ c c c c c }%
 \toprule%
-& \multicolumn{2}{c}{\TableHeadFontSize\parbox[t]{12mm}{\centering Our\\Model}}
+& \multicolumn{2}{c}{\TableHeadFontSize\parbox[t]{12mm}{\centering New\\Model}}
 & \multicolumn{2}{c}{\TableHeadFontSize\parbox[t]{12mm}{\centering Prior\\Model}}\\
 \\[-2mm]
 \parbox[t]{4mm}{\raggedleft$N\:$}
@@ -617,7 +625,7 @@ Rather, it is probably that only minor creativity is require to transfer them to
 {%
 \begin{tabular}[t]{ r r c r c }%
 \toprule%
-& \multicolumn{2}{c}{\TableHeadFontSize\parbox[t]{12mm}{\centering Our\\Model}}
+& \multicolumn{2}{c}{\TableHeadFontSize\parbox[t]{12mm}{\centering New\\Model}}
 & \multicolumn{2}{c}{\TableHeadFontSize\parbox[t]{12mm}{\centering Prior\\Model}}\\
 \\[-2mm]
 \parbox[t]{4mm}{\raggedleft$N$}
@@ -652,7 +660,7 @@ Rather, it is probably that only minor creativity is require to transfer them to
 {%
 \begin{tabular}[t]{ r r c r c }%
 \toprule%
-& \multicolumn{2}{c}{\TableHeadFontSize\parbox[t]{12mm}{\centering Our\\Model}}
+& \multicolumn{2}{c}{\TableHeadFontSize\parbox[t]{12mm}{\centering New\\Model}}
 & \multicolumn{2}{c}{\TableHeadFontSize\parbox[t]{12mm}{\centering Prior\\Model}}\\
 \\[-2mm]
 \parbox[t]{4mm}{\raggedleft$N$}
@@ -684,7 +692,7 @@ Rather, it is probably that only minor creativity is require to transfer them to
 \end{subtable}%
 }% END font resize
 \vspace*{1mm}%
-\caption{Efficiency comparison of novel model encoding with prior work.\label{tab:state-vector-comparison}}%
+\caption{Efficiency comparison of our new model encoding with our prior work.\label{tab:state-vector-comparison}}%
 %\end{center}%
 %\end{table}%
 %\vspace*{-15mm}%
@@ -697,17 +705,14 @@ Rather, it is probably that only minor creativity is require to transfer them to
 \toprule%
 \parbox[t]{7mm}{\TableHeadFontSize\centering $N$}
 & \parbox[t]{6mm}{\TableHeadFontSize\centering LTL}
-& \parbox[t]{10mm}{\TableHeadFontSize\centering Version}
 & \parbox[t]{13mm}{\TableHeadFontSize\raggedleft Runtime\\(s)}
 & \parbox[t]{19mm}{\TableHeadFontSize\raggedleft Memory\\(GiB)}
 & \parbox[t]{19mm}{\TableHeadFontSize\raggedleft Search\\Depth}
 & \parbox[t]{19mm}{\TableHeadFontSize\raggedleft States\;\;\\(stored)}
 & \parbox[t]{19mm}{\TableHeadFontSize\raggedleft Transitions} \\
 \midrule
-16 & \LTLPredicate{FSU} & \VersionOne&  86103 & 160,135.655 & \BigNum{2.598}{9} & \BigNum{3.557}{9} & \BigNum{6.591}{9} \\
-16 & \LTLPredicate{FSU} & \VersionTwo &  77272 & 160,135.655 & \BigNum{2.598}{9} & \BigNum{3.034}{9} & \BigNum{6.591}{9} \\
-16 & \LTLPredicate{PCS} & \VersionOne & 100681 & 195,677.864 & \BigNum{4.386}{9} & \BigNum{4.494}{9} & \BigNum{7.969}{9} \\
-16 & \LTLPredicate{PCS}& \VersionTwo &  79552 & 195,677.864 & \BigNum{4.386}{9} & \BigNum{3.475}{9} & \BigNum{7.969}{9} \\
+16 & \LTLPredicate{FSU}&  77272 & 160,135.655 & \BigNum{2.598}{9} & \BigNum{3.034}{9} & \BigNum{6.591}{9} \\
+16 & \LTLPredicate{PCS} &  79552 & 195,677.864 & \BigNum{4.386}{9} & \BigNum{3.475}{9} & \BigNum{7.969}{9} \\
 \bottomrule%
 \end{tabular}%
 }% END font resize
