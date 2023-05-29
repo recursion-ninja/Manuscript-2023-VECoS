@@ -88,7 +88,7 @@
 %
 \title{Verifying the TreeKEM protocol with Spin and Continuous Group Key Agreement}
 %
-%\titlerunning{Abbreviated paper title}
+\titlerunning{Verifying the TreeKEM protocol with Spin and CGKA}
 % If the paper title is too long for the running head, you can set
 % an abbreviated paper title here
 %
@@ -110,8 +110,8 @@ Subash Shankar\inst{1,3}}
 \begin{abstract}
 The TreeKEM protocol is the preeminent implementation candidate for the Message Layer Security standard.
 Prior work analyzed TreeKEM by defining the Continuous Group Key Agreement security game,
-which facilitated proof of some security guarantees as well as identifying protocol deficiencies which were subsequently remedied.
-This work extends the such applications by formalizing the Continuous Group Key Agreement security game through multiple soundness preserving abstractions.
+which facilitated proof of some security guarantees and also identified protocol deficiencies which were subsequently remedied.
+This work extends such applications by formalizing the Continuous Group Key Agreement security game through multiple soundness preserving abstractions.
 The model is parameterized by $N$, representing an unbounded protocol duration between at most $N$ unique participants.
 Once formalized, the game is encoded it within \Promela and notable security guarantees are verified for $N \le 16$ via the model checker Spin.
 This represents a notable achievement, both in practical security terms for the TreeKEM protocol, as well as demonstrating scalability techniques for non-trivial parameter bounds when modeling a complex, concurrent protocol.
@@ -143,21 +143,20 @@ To be considered a \Abrev{SGM} protocol~\cite{ietf-mls-protocol-14}, the \Abrev{
 Furthermore, the \Abrev{IETF} defines \Abrev{MLS}~\cite{Omara2020}, a standardization specification within which \Abrev{SGM} protocols can be defined.
 \Abrev{MLS} describes the \Abrev{SGM} protocol environment in which protocol agents interact.
 The \Abrev{ITM} of RFC3552~\cite{rescorla2003rfc3552} is the context within which the \Abrev{MLS} specifies its security guarantees.
-Additionally, the existence of an \Abrev{AS}~\cite{perlman1999overview} from which a messenger can request fresh public key for a specified contact which can be immediately used within the \Abrev{MLS} protocol.
+Additionally, an \Abrev{AS}~\cite{perlman1999overview} exists from which a messenger can request fresh public key for a specified contact which can be immediately used within the \Abrev{MLS} protocol.
 Similarly, the existence of a \Abrev{DS} which can receive messages addressed to any contact and the \Abrev{DS} stores the messages until the contact queries for new messages.
 The ability to query \Abrev{AS} and \Abrev{DS} third-parties simplifies the asynchronicity requirement, mediating potential protocol synchronization issues between participants.
-The \Abrev{MLS} specification also specified \Abrev{FSU}~\cite{Omara2020} and \Abrev{PCS}~\cite{cohn2016post} as security guarantees of the protocol.
-Both \Abrev{FS} and \Abrev{PCS} have been researched with respect to \Abrev{SM}, producing provably secure as well as efficient constructions, but for \Abrev{SGM} were a previously open problems in cryptography.
+The \Abrev{MLS} specification also specifies \Abrev{FSU}~\cite{Omara2020} and \Abrev{PCS}~\cite{cohn2016post} as security guarantees of the protocol.
+Both \Abrev{FS} and \Abrev{PCS} have been researched with respect to \Abrev{SM}, producing provably secure as well as efficient constructions, but for \Abrev{SGM} were previously open problems in cryptography.
 
 The TreeKEM protocol \cite{bhargavan:hal-02425247} was conceived in 2018, but thoroughly described in 2019.
 The \Abrev{IETF} has put its support behind the TreeKEM protocol along with many other corporate and government sponsors.
-%As the \Abrev{MLS} draft specification has gone through over a dozen revisions in the last half decade, the complimentary development and refinement of the TreeKEM protocol has significantly informed the direction and language of \Abrev{MLS}.
 TreeKEM provides functionality for achieving each of the six operations to be considered a \Abrev{SGM} protocol.
 Additionally TreeKEM aims to satisfy both the efficiency goals and security guarantees of the \Abrev{MLS} specification, addressing the previously open problems of \Abrev{FS} and \Abrev{PCS} for \Abrev{SGM}.
-Conformance with both of these definitions are a result of TreeKEM's construction.
+Conformance with both of these definitions is a result of TreeKEM's construction.
 
 The essence of TreeKEM is a protocol to generate continuous, fresh, shared, and secret random keys for use by group members.
-This generation process is based around a \Abrev{LBBT}~\cite{baerentzen2003left} shared by all participants, with nodes decorated by public keys~\cite{rfc4949}.
+This generation process is based on a \Abrev{LBBT}~\cite{baerentzen2003left} shared by all participants, with nodes decorated by public keys~\cite{rfc4949}.
 Leaf nodes of the \Abrev{LBBT} contains the public key uniquely corresponding to a group member, and each 
 internal node contains a constructed public key, with a private key shared by each group member in the sub-tree.
 Hence the root node's key material is known to all group members and used for symmetric encryption of messages.
@@ -173,35 +172,16 @@ New encryption ``epochs'' are created by broadcasting a control message for one 
 	\item Update their continuously agreed upon symmetric encryption key
 \end{itemize}
 
-
-
-
-%\section{Verification Goals}
-%
-%This work presents two primary verification goals for the TreeKEM protocol.
-%\Abrev{MLS} specifies the desirable security guarantees of \Abrev{FS} and \Abrev{PCS}.
-%These properties are analyzed and proven by~\cite{alwen2020security} via working with oracle query sequences within the \CGKAsec.
-%This work takes the further step of formalizing the \CGKAsec and verifying the formal model.
-%Formalizations presented in the following section are sound for the properties (\Abrev{FSU} and \Abrev{PCS}) and protocol (TreeKEM) under consideration, but may not be sound for the verification of arbitrary properties.
-
-
-{%
-\section{Verification Goals}\label{sec:forward-secrecy-with-updates}}
-
 This work presents two primary verification goals for the TreeKEM protocol; the security guarantees of \Abrev{FSU} and  \Abrev{PCS} specified by \Abrev{MLS}.
 The former offers protection in the case that a protocol's long-term secret key(s) are compromised \cite{boyd2021modern}.
-The latter ensures that no matter how many compromises of key material occur among the group members previously, once no new compromises occur, the group members will eventually reestablished secrecy through continued protocol usage \cite{alwen2020security}.\\[-1mm]
-
-%\begin{quoting}%
-%``It is always the case that, when \(\mathcal{A}\) corrupts a \(\mathtt{ID_{i}}\) via querying \Oracle{corr}{ID_{i}}, then \(\mathtt{ID_{i}}\) has not been previously instructed to keep secret key material via querying \Oracle{no-del}{ID_{i}}.''
-%\end{quoting}%
+The latter ensures that no matter how many compromises of key material occur among the group members previously, once no new compromises occur, the group members will eventually reestablish secrecy through continued protocol usage \cite{alwen2020security}.\\[-1mm]
 
 
-\section{Formalization Abstractions\label{sec:Formal-Abstractions}}
+\section{Formalization and Abstractions\label{sec:Formal-Abstractions}}
 
 Formalizing the model under verification is always an important and detailed process.
-However, as our verification methodology utilizes explicit state model checking, it is important to rigorously control the size of the model's state-space.  
-To that end, multiple abstractions presented within Section \ref{sec:Formal-Abstractions} which, when composed together progressively contain and reduce the model's state-space.
+However, as our verification methodology utilizes explicit state model checking, it is important to rigorously control the size of the model's state-space to avoid state space explosion. 
+To that end, we developed multiple abstractions (presented in Section~\ref{sec:Formal-Abstractions}) which, when composed together progressively contain and reduce the model's state space. 
 Without these abstractions, the model would not be verifiable for even modestly sized parameters.
 
 \subsection{Continuous Group Key Agreement}
@@ -212,9 +192,10 @@ The  \CGKAdef\ is used to maintain secure communications between a group of two 
 A continuous group key-agreement scheme is an abstract collection of algorithms used to maintain secure communications between a group of two or more participants, each algorithm being known and performed locally by participants:\\[2mm]
 \centerline{$\CGKAdef = \left\{\,\Protocol{init},\, \Protocol{create},\, \Protocol{add},\, \Protocol{rem},\, \Protocol{upd},\, \Protocol{proc}\,\right\}$}\\[-3mm]
 
-Additionally, an oracle-based security game for \Abrev{CGKA} is also defined~\cite{alwen2020security}.
+% XXX do you mean defined BY [2]? Say it. 
+Additionally, an oracle-based security game for \Abrev{CGKA} is also defined by~\cite{alwen2020security}.
 Each oracle is defined in terms of one or more of the algorithms from the \CGKAdef\ definition.
-An adversary can query all ten of the game's oracles, and through the sequence of query's, the adversary uses the oracles to direct the execution of the \Abrev{CGKA} protocol.
+An adversary can query all ten of the game's oracles, and through the sequence of queries use the oracles to direct the execution of the \Abrev{CGKA} protocol.
 The group members can only call the six \CGKAdef\ algorithms above, while the adversary can only query the ten oracles below.
 However, there exists one oracle which corresponds to each of the six \CGKAdef\ algorithms, effectively giving the attacker comparable options to any group member in addition to the options provided by the remaining four oracles.
 The \CGKAsec\ defines the following oracles:\\[1mm]%
@@ -254,19 +235,19 @@ The \CGKAsec\ defines the following oracles:\\[1mm]%
 \end{tabular}%
 }\\%
 
-The \Oracle{init}{} oracle flips a random bit \(b\) uniformly at random and this result remains constant and hidden for the entirety of the game.
-The random result assigned to \(b\) bit is used for the traditional ``real-or-random'' challenges in security games, in which the adversary must distinguish whether they are observing the actual cryptographic protocol or random information being transmitted.
-Figure \ref{fig:CGKA-Direct} depicts a direct formalization of the \CGKAsec abstraction.
-
-The goal of the adversary is said to demonstrate advantage by discriminating the value of \(b\) with probability greater than \(\frac{1}{2}\).
-An adversary \Adversary demonstrating \emph{advantage} is parameterized by \((T, C, N)\).
+These oracles define a security game \cite{shoup2004sequences} which emulates the \Abrev{ITM}.
+Such security games are a common analysis tool made by cryptographers, where the ``game moves'' representing protocol semantics, and the objective is to show that the probability of an adversary \Adversary  breaking a certain security property by playing this game is negligible.
+Within the \CGKAsec, an adversary \Adversary is parameterized by \((T, C, N)\).
 The \(T\) value indicates that the protocol runs in at most \(T\) epochs, during which time the \(\mathcal{A}\) can make at most \(C\) challenge queries, and the total unique group members of the protocol can never exceed \(N\).
-The \((T, C, N)\)-adversary \(\mathcal{A}\) demonstrates \emph{advantage} by ending the game via a query to the \Oracle{chall}{} oracle, winning the \CGKAsec, if and only if:
+The \((T, C, N)\)-adversary \(\mathcal{A}\) demonstrates demonstrating non-negligible \emph{advantage} by ending the game via a query to the \Oracle{chall}{} oracle, winning the \CGKAsec, if they can infer information of the shared TreeKEM root key.
+We model the TreeKEM protocol in terms of the \CGKAsec as our initial abstraction, depicted in Figure \ref{fig:CGKA-Direct}.
 
-\begin{definition}[Non-adaptive $(T, C, N, \epsilon)$ \Abrev{CGKA} Security]\label{def:CGKA-Security}
-A \Abrev{CGKA} protocol is said to be secure if and only if for all $(T, C, N)$-adversaries $\mathcal{A}$,
-\[ \left|\; \Pr\left[ \,\mathcal{A}\mathrm{~correctly~identifies~}b\, \right] - \frac{1}{2} \;\right| \leq \epsilon \]
-\end{definition}
+\begin{figure}
+\centering
+\subimport{./figures/}{Legend}
+\caption{Legend of color coded elements and connective edges in figures.\label{fig:CGKA-Legend}}%
+\end{figure}
+
 
 \begin{figure}
 \centering
@@ -287,28 +268,19 @@ High-level illustration of the \CGKAsec formalization.\ %
 \subsection{Adversarial Direction}
 
 While both the adversary \Adversary and each group member can initiate new epoch within the \CGKAsec, modeling this explicitly unnecessarily complicates the model.
-Recall that within the Internet threat model, \Adversary controls the network.
-This is modeled within the \CGKAsec by messages sent from any source only being delivered if \Adversary permits it by querying the \Oracle{deliver}{}.
-Furthermore, if and only if the verification methodology will explore all possible interleaving of concurrent actions within the \CGKAsec, simulating nondeterministic computation, this can be utilized to form an additional simplifying abstraction.
+Recall that within the \Abrev{ITM}, \Adversary controls the network.
+This is modeled within the \CGKAsec by messages sent from any source only being delivered if \Adversary permits it by querying \Oracle{deliver}{}.
+Because the verification methodology will explore all possible interleaving of concurrent actions within the \CGKAsec, simulating nondeterministic computation, this can be utilized to form an additional simplifying abstraction.
 Without loss of generality, the modeling of the \CGKAsec will only consider \Adversary originating calls to algorithms \Protocol{add}, \Protocol{rem}, and \Protocol{upd} via queries to the oracles \Oracle{add-user}{}, \Oracle{remove-user}{}, and \Oracle{send-update}{}, respectively.
+Hence the model does not need to consider any group member calls to \Protocol{add}, \Protocol{rem}, and \Protocol{upd}, allowing these states to be safely removed from the model encoding without effecting protocol semantics.
 The application of this simplifying abstraction composed with the original \CGKAsec is depicted in Figure \ref{fig:CGKA-Adversarial-Driven}.
-
-
-%\begin{figure}
-%\centering
-%\resizebox{\GamplayFigWidth}{!}{\subimport{./figures/}{CGKA-Adversarial-Driven}}
-%\caption[Transition graph of informal CGKA definition]{%
-%\label{fig:CGKA-Adversarial-Driven}%
-%\CGKAsec composed with ``Adversarial Direction'' abstraction.%
-%}%
-%\end{figure}
 
 
 \subsection{End-to-end Encryption Concession}
 
 The verification of end-to-end encryption is beyond the scope of this model, as the objective is solely the \Abrev{FSU} and \Abrev{PCS} security properties.
 Recognizing this, we can assume that end-to-end encryption of messages between group members holds.
-By conceding this, it is unnecessary to model the communication between group members, as \Adversary will not gain any advantage by observing messages between group members.
+By conceding this, it is not necessary to model the communication between group members, as \Adversary will not gain any advantage by observing messages between group members.
 This simplifying abstraction removes the need to maintain message queues as well as model the processing order of messages by the \Abrev{DS}.
 Furthermore, the explicit modeling of the \Abrev{DS} becomes entirely superflous.
 Instead of explicitly modeling the message processing semantics of the \Abrev{DS}, the consistent message delivery requirement  of the \Abrev{DS} is \emph{implicitly} modeled by the actions available to \Adversary at a given protocol state.
@@ -340,47 +312,39 @@ Interestingly, with this abstraction $C$ does not need to be explicitly paramete
 
 Suppose we fix the number of epochs $T$.
 Then necessarily $C \in \NumericRange{1}{T}$, as \Adversary can only perform \emph{one} challenge query per epoch.
-Within the formalized security game, during each epoch \Adversary has the option to make either zero or one challenging query.
+Within the formalized security game, during each epoch \Adversary has the option to make either zero or one challenge query.
 Given the exhaustiveness of model checking methodology, all possible choices are explored.
 Therefore, without any loss of generality, verification of a model parameterized by a fixed $T$, also implicitly verifies $\forall C \in \NumericRange{1}{T}$, allowing for the specification of $C$ to be elided from the model parameters.
 
 
-%\begin{figure}
-%\centering
-%\resizebox{\GamplayFigWidth}{!}{\subimport{./figures/}{CGKA-Parameterized}}
-%\caption[Transition graph of informal CGKA definition]{%
-%\label{fig:CGKA-Parameterized}%
-%Gameplay after composing ``Parameterized Bounds'' abstraction.%
-%}%
-%\end{figure}
-
-
 \subsection{Required Progression\label{sec:abstraction-progression}}
 
-A fundamental simplifying abstraction in our model is the restriction imposed on the \Adversary, allowing only "non-redundant" moves within the \CGKAsec. 
-Redundancy, in this context, refers to the situation where the \Adversary chooses to query an oracle in such a way that the security game enters a state that has already been reached within the same epoch.
-Put simply, each query made by the \Adversary must lead to a unique and previously unseen state, which we will refer to as a "fresh" state within the epoch.
+A fundamental simplifying abstraction in our model is the restriction imposed on \Adversary, allowing only ``non-redundant'' moves within the \CGKAsec.
+Redundancy, in this context, refers to the situation where \Adversary chooses to query an oracle in such a way that the security game enters a state that has already been reached within the same epoch.
+Put simply, each query made by \Adversary must lead to a unique and previously unseen state, which we will refer to as a ``fresh'' state within the epoch.
 It is worth noting that this constraint does not sacrifice any expressiveness in the model; it simply eliminates cycles in the model's state transition graph.
 The application of this constraint has a significant impact by bounding the model's state-space.
 
 Let us consider the oracles that drive the game. A query to \Oracle{add-user}{}, \Oracle{remove-user}{}, or \Oracle{send-update}{} advances the epoch, ensuring that it always results in a fresh state, specifically the first state of the \emph{next} epoch.
 Additionally, querying \Oracle{chall}{} ends the game, and since the game has not ended before this query, it necessarily leads to a fresh state.
-These "epoch-ending" queries do not limit the moves available to the \Adversary in the epoch prior to the query, as the previous epoch is no longer relevant to the "non-redundant" constraint after the query.
+These ``epoch-ending'' queries do not limit the moves available to the \Adversary in the epoch prior to the query, as the previous epoch is no longer relevant to the ``non-redundant'' constraint after the query.
 
 To query \Oracle{corr}{} or \Oracle{no-del}{}, there must be an applicable member ID.
-After such a query, the state of the group member is consistently changed from $\top \mapsto \bot$.
-To change the state of a group member from $\bot \mapsto \top$, the \Adversary must query either \Oracle{remove-user}{} or \Oracle{send-update}{}.
+After such a query, the state of the group member is consistently changed from $\top$ to $\bot$.
+To change the state of a group member from $\bot$ to $\top$, \Adversary must query either \Oracle{remove-user}{} or \Oracle{send-update}{}.
 However, querying either of these oracles results in a new epoch, which means that querying \Oracle{corr}{} or \Oracle{no-del}{} subsequently leads to a fresh state.
-Since this query alters the state of the group member from $\top \mapsto \bot$, there is no way the state of a group member could have been changed from $\bot \mapsto \top$ during the current epoch.
+Since this query alters the state of the group member from $\top$ to $\bot$, there is no way the state of a group member could have been changed from $\bot$ to $\top$ during the current epoch.
 
 Furthermore, considering \Oracle{corr}{} and \Oracle{no-del}{}, we recall that the number of unique group members is bounded by $N$.
-Although the \Adversary can query both oracles multiple times during an epoch, due to the "non-redundant" constraint, each query monotonically decreases the available moves for the \Adversary.
-Eventually, since $N$ is finite, there will no longer be an option to make a "non-redundant" query to \Oracle{corr}{} or \Oracle{no-del}{} because the state of all group members will be $\bot$. Similarly, querying \Oracle{reveal}{} can only occur at most once per epoch, resulting in a fresh state and decreasing the available moves for the \Adversary by one, as the "non-redundant" constraint prevents querying \Oracle{reveal}{} again in the current epoch.
+Although \Adversary can query both oracles multiple times during an epoch, due to the ``non-redundant'' constraint, each query monotonically decreases the available moves for \Adversary.
+Eventually, since $N$ is finite, there will no longer be an option to make a ``non-redundant'' query to \Oracle{corr}{} or \Oracle{no-del}{} because the state of all group members will be $\bot$.
+Similarly, querying \Oracle{reveal}{} can only occur at most once per epoch, resulting in a fresh state and decreasing the available moves for \Adversary by one, as the ``non-redundant'' constraint prevents querying \Oracle{reveal}{} again in the current epoch.
 
-Analyzing the relationship of the oracles in the \CGKAsec state, we observe that imposing the "non-redundant" constraint causes the available moves for the \Adversary in the current epoch to monotonically decrease with each query. Eventually, this leads to a point where no "non-redundant" moves are available that would result in the same epoch, requiring \Adversary to advance the game to the next epoch.
+Analyzing the relationship of the oracles in the \CGKAsec state, we observe that imposing the ``non-redundant'' constraint causes the available moves for \Adversary in the current epoch to monotonically decrease with each query.
+Eventually, this leads to a point where no ``non-redundant'' moves are available that would result in the same epoch, requiring \Adversary to advance the game to the next epoch.
 Consequently, utilizing this can be considered a ``Required Progression''  abstraction which fully bounds the model's state-space by the parameters $T$ and $N$.
 This is apparent by observing that the number of queries \Adversary can make in each epoch is constrained by $N$ and the total number of epochs is constrained by $T$.
-The application of compositing this abstraction all prior abstractions is depicted in Figure \ref{fig:CGKA-Progressing}
+The composition of the model after this and all prior abstractions is depicted in Figure~\ref{fig:CGKA-Progressing}.
 
 \begin{figure}
 \centering
@@ -400,10 +364,10 @@ Gameplay after composing ``Markovian Property'' abstraction.%
 
 \subsection{Markovian Property}
 
-The final abstraction to utilized in our modeling the TreeKEM protocol is the observation of that the model, in it's currently simplified form, can be viewed as a Markov Process~\cite{markov1906a}.
+The final abstraction to utilized in our modeling the TreeKEM protocol is the observation that the model, in it's currently simplified form, can be viewed as a Markov Process~\cite{markov1906a}.
 Consider \Adversary entering a \CGKAsec state $s_{i}$.
-How the TreeKEM protocol evolved prior to $s_{i}$ does not inform the moves available to \Adversary, only the current game state informs this.
-Furthermore, how the knowledge accumulated by \Adversary prior to $s_{i}$ was obtained does not further inform \Adversary of the TreeKEM protocol's CGKA key, only deductions via the attacker's current knowledge.
+How the TreeKEM protocol evolved prior to $s_{i}$ does not inform the moves available to \Adversary, rather the current game state $s_{i}$ solely informs this.
+Furthermore, how the knowledge accumulated by \Adversary prior to $s_{i}$ was obtained does not further inform \Adversary of the TreeKEM protocol's CGKA key, instead all \Adversary knowledge is deduced from $s_{i}$.
 Phrased differently, state $s_{i-1}$ has no unique information which informs state transitions from $s_{i}$, state transitions from $s_{i}$ are determined solely from the information contained within $s_{i}$.
 
 Applying this abstraction has a profoundly important impact on model verification.
@@ -411,15 +375,6 @@ Because the model can be encoded as a Markov process, it can become ``memoryless
 Consequently, the model applying this ``Markovian Property'' abstraction elides the specification of $T$ from the model parameters.
 The resulting model is parameterized only by $N$, yet verifying all $t \in \NumericRangeOpenR{1}{\infty}$ and $c \in \NumericRange{1}{t}$.
 The culmination of composing all abstractions described within Section \ref{sec:Formal-Abstractions} is depicted in Figure \ref{fig:CGKA-Markovian}.
-
-%\begin{figure}
-%\centering
-%\resizebox{\GamplayFigWidth}{!}{\subimport{./figures/}{CGKA-Markovian}}
-%\caption[Transition graph of informal CGKA definition]{%
-%\label{fig:CGKA-Markovian}%
-%Gameplay after composing ``Markovian Property'' abstraction.%
-%}%
-%\end{figure}
 
 
 \section{Methodology}
@@ -433,7 +388,7 @@ The \Promela encoding\footnote{Source code: \url{\texttt{https://github.com/recu
 of \CGKAmodN{N} produces all possible states and transitions of TreeKEM, and this representation is then supplied to a model checker for verification.
 
 The explicit state model checker the Spin model checker~\cite{HolzmannSpinBook2003} was chosen as the verification tool for this work.
-As an explicit-state model checker, Spin utilizes a representation of all possible model states as an \Abrev{FSM}~\cite{clarke1981design}, with transitions uniquely identifying the possible changes in model state.
+As an explicit-state model checker, Spin utilizes a representation of all possible model states as a \Abrev{FSM}~\cite{clarke1981design}, with transitions corresponding to possible changes in model state.
 Spin then asserts that a properties holds for the protocol by traversing through all combinations of transitions through the graph~\cite{Vardi1986}.
 The principle drawback of explicit state model checking is the immense state-space resulting as the model complexity grows~\cite{burch1992symbolic}.
 As a venerable tool, Spin does much to address this~\cite{rudin1987limits} but our own encoding adaptations which further mitigate the state-space explosion are detailed below in Sections \ref{sec:bit-array} and \ref{sec:popcount}.
@@ -442,22 +397,22 @@ Additionally, Spin supports numerous compile time directive which alter the stat
 
 \subsection{Encoding  of Bit-arrays\label{sec:bit-array}}
 
-In the default \Promela type system, an array of bits is encoded as an array of bytes at runtime, resulting in each "bit value" requiring 8 bits during verification.
-This encoding inflates the state-vector size unnecessarily by 8 bits and causes the model checker to consider 256 states instead of the actual 2 valid state encodings.
+In the default \Promela type system, an array of bits is encoded as an array of bytes at runtime, resulting in each ``bit value'' requiring 8 bits during verification.
+This encoding inflates the state-vector size unnecessarily by 8 bits and causes the model checker to consider 256 states instead of the actual 2 binary states which are valid encodings ($\texttt{0x00} = \textsc{True}$, $\texttt{0xFF} = \textsc{False}$).
 Consequently, verification times are slower, and at least eight times more memory is required.
 To address this, we manually toggle bits within a fixed bit-width \Promela type using C Pre-processor (CPP) macros, reducing the state-vector size and improving runtime efficiency while minimizing memory usage.
 
 
 \subsection{Control Flow Elision via PopCount\label{sec:popcount}}
 
-An additional, significant \Promela encoding technique within our work was the clever application of a bit-wise population count (PopCount) operation.
-PopCount returns the number of bits set in the calue of a fixed bit-width type.
+An additional, significant \Promela encoding technique within our work was the application of a bit-wise population count (PopCount) operation.
+PopCount returns the number of bits set in the value of a fixed bit-width type.
 Within the model encoding, due to the ``Required Progression''  abstraction (Section \ref{sec:abstraction-progression}), it is necessary to count the number of set (or unset) bits to determine which queries are available for \Adversary.
 This bit counting occurs multiple times within the model.
 The naive approach involves a counter along with a looping control flow structure to individually test each applicable bit value.
 In contrast, the PopCount operation returns the number of set bits without iteration.
 
-We define PopCount as a small, inlined sequence of arithmetic and bit-wise operations which runs in \BigO{1} time with \BigO{0} additional memory.
+We define PopCount as a small, inlined sequence of arithmetic and bit-wise operations which runs in \BigO{1} time with no additional memory.
 Substituting PopCount in place of the naive iteration has two notable effects, reducing the state-vector length by removing the loop counter and reducing the number of state transitions by removing the entire control flow structure of the loop.
 For a bit-array of length $n$, the number of transitions encoded in the model by iteration is exponentially related to $n$, whereas the PopCount macro derives a \emph{constant} number of transitions independent of $n$.
 
@@ -486,29 +441,26 @@ After every group member whose state was leaked initiates an epoch update, and t
 
 \section{Results}
 
-%Recall that our abstractions allowed for only one parameter.
-
+Recall that our abstractions allowed for only one parameter $N$, the number of unique TreeKEM participants .
 Verification of  \Abrev{FSU} and \Abrev{PCS} was conducted on the models \CGKAmodN{16}.
-Each models had a state-vector of $100$\siBytes.
+Each model had a state-vector of $100$\siBytes.
 Verification runs utilized 1 TiB RAM and \(64\) AMD Opteron Processor 6380 core operating at 2500MHz\footnote{Performed on the American Museum of Natural History scientific computing cluster}.
 Each verification run utilized 2 cores and up to 200 GiB of RAM.
-All Spin performance tuning options used during verification are listed in Table ref{tab:spin-confg}.
+All Spin performance tuning options used during verification are listed in Table~\ref{tab:spin-confg}.
 The performance observations of the verification runs are depicted in Table \ref{tab:verification-measurements}.
 Note that all run-times are ``wall clock'' time not ``CPU time.''
 All \Abrev{LTL} properties for all models were successfully verified.
 
-\subsection{Interpretation}
-
 The positive verification of the LTL encodings of  \Abrev{FSU} and \Abrev{PCS} for \CGKAmodN{16} are not surprising.
 Rather, it is consistent with the exceptions shown by the previous \CGKAdef abstraction formalization work~\cite{alwen2020security}.
-% Mention we do this, has not been done before.
 While consistent, this is the first instance known to the authors which has modeled the TreeKEM protocol and verified \Abrev{FSU} and \Abrev{PCS} for all $(\,T, C, N\,)$--Adversaries, with $T \in \NumericRangeOpenR{1}{\infty}$, $C \in \NumericRange{1}{T}$, and $N \in \NumericRange{2}{16}$.
+Verification for TreeKEM of this scope has not been done before.
 
 \subsection{Scalability}
 
 The combination of presented composed abstractions and encoding techniques constitute an additional and general contribution which may be applicable to other modeling endeavors.
 Empirical results of employing these abstractions in conjunction with the bit-packing and PopCount encodings impressively reduced the model complexity, model parameters, state-vector size, verification time, as well as the memory footprint!
-For comparison Table \ref{tab:state-vector-comparison} compares state-vector length of this work's model encoding with our prior verification work~\cite{washburn2022formal}, emphasizing the vast difference in model expressiveness and encoding efficiency.
+For comparison, Table \ref{tab:state-vector-comparison} compares state-vector length of this work's model encoding with our prior verification work~\cite{washburn2022formal}, emphasizing the vast difference in model expressiveness and encoding efficiency.
 Consequently, the verification performance also differs drastically from prior work.
 As depicted in Table \ref{tab:performance-comparison}, a modest time/memory tradeoff permits our model encoding to complete verification much faster than our prior verification work~\cite{washburn2022formal}.
 Security guarantee verification not only concludes more quickly, but remarkably the conclusion also literally produces an infinitely stronger result; $\forall T \in \NumericRangeOpenR{1}{\infty}$.
@@ -517,9 +469,7 @@ Security guarantee verification not only concludes more quickly, but remarkably 
 
 The authors hypothesize that the model can scale to $N = 24$ on computing cluster hardware without further modification.
 Perhaps even $N \approx 32$ can be achieve with minor modifications.
-Such verification efforts are an immediate next step.
-Similarly, additional properties of TreeKEM can be explored with this work's model encoding.
-One such direction would involve exploring the relaxation of requirements placed on the \Abrev{DS}, enabling TreeKEM's operation with less trust placed in a third party.
+Similarly, additional properties of TreeKEM can be explored with this work's model encoding, such as exploring the relaxation of  \Abrev{DS} requirements, enabling TreeKEM with a less trusted third party.
  
 \section{Conclusion}
 
@@ -529,7 +479,7 @@ The authors believe we are the first to compose these abstractions and encoding 
 The exploration of combining these techniques has been shown to be vitally important tools for achieving scalability when verifying a complex model such as the TreeKEM protocol.
 An unqualified improvement was obtained across each of the following measurable dimensions: model complexity,  parameterization, state-vector length, and verification space as well as time.
 While the application and analysis of presented techniques herein was limited to TreeKEM, the techniques are not so bespoke that they apply only to modeling and verifying TreeKEM.
-Rather, it is probably that only minor creativity is require to transfer them to other modeling efforts.
+Rather, it is probable that only minor creativity is require to transfer them to other modeling efforts.
 
 
 \begin{table}[t!]%
